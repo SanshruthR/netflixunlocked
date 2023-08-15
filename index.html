@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Netflix Unlocked</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
+    <style>
+        body {
+            background-color: #000;
+            color: white;
+            overflow: hidden; /* Prevent scrolling */
+            position: relative; /* Add relative position to the body */
+        }
+        .center-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            min-height: 100vh;
+        }
+        .carousel img {
+            max-width: 120px;
+            height: auto;
+            cursor: pointer;
+        }
+        #matrix-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+        #movie-title, .btn-teal {
+            display: block;
+        }
+        .owl-nav {
+            margin-top: 20px;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            display: none; /* Hide arrows initially */
+        }
+        .owl-prev, .owl-next {
+            color: black; /* Set arrow color to black */
+            font-size: 32px; /* Increase arrow size */
+            position: absolute;
+            top: 0;
+        }
+        .owl-prev {
+            left: 20px; /* Adjust left arrow position */
+        }
+        .owl-next {
+            right: 20px; /* Adjust right arrow position */
+        }
+        .owl-carousel:hover .owl-nav {
+            display: block; /* Show arrows on carousel hover */
+        }
+        #movie-title {
+            width: 300px; /* Make the text box wider */
+        }
+        .btn-teal {
+            background-color: teal;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix-canvas"></canvas>
+    <div class="container">
+        <div class="center-content">
+            <h1>Netflix Unlocked</h1>
+            <form id="search-form">
+                <div class="form-group">
+                    <input type="text" class="form-control" id="movie-title" placeholder="Enter movie title">
+                </div>
+               <center><button type="submit" class="btn btn-teal">Search</button></center> 
+            </form>
+            <div class="owl-carousel" id="carousel">
+                <!-- Related movies will be displayed here as carousel items -->
+            </div>
+            <div class="owl-nav">
+                <button class="owl-prev"><</button>
+                <button class="owl-next">></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+    <script>
+        // Matrix Rainfall Animation
+        var matrixCanvas = document.getElementById('matrix-canvas');
+        var matrixCtx = matrixCanvas.getContext('2d');
+        var matrixFont = '20px monospace';
+        matrixCanvas.width = window.innerWidth;
+        matrixCanvas.height = window.innerHeight;
+
+        var matrixLetters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        matrixLetters = matrixLetters.split('');
+
+        var matrixColumns = matrixCanvas.width / 20;
+        var matrixDrops = [];
+
+        for (var i = 0; i < matrixColumns; i++) {
+            matrixDrops[i] = Math.floor(Math.random() * matrixCanvas.height);
+        }
+
+        function matrixDraw() {
+            matrixCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            matrixCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+            matrixCtx.fillStyle = '#0f0';
+            matrixCtx.font = matrixFont;
+
+            for (var i = 0; i < matrixColumns; i++) {
+                var text = matrixLetters[Math.floor(Math.random() * matrixLetters.length)];
+                matrixCtx.fillText(text, i * 20, matrixDrops[i] * 20);
+                if (matrixDrops[i] * 20 > matrixCanvas.height && Math.random() > 0.975) {
+                    matrixDrops[i] = 0;
+                }
+                matrixDrops[i]++;
+            }
+        }
+
+        setInterval(matrixDraw, 100);
+
+        $(document).ready(function() {
+            $('#search-form').on('submit', function(e) {
+                e.preventDefault();
+                var movieTitle = $('#movie-title').val();
+                $.ajax({
+                    url: 'https://www.omdbapi.com/?apikey=62f3807a&t=' + movieTitle,
+                    type: 'GET',
+                    success: function(data) {
+                        $('#movie-title, .btn-teal').hide();
+                        $('#results').html(''); // Clear previous results
+
+                        // Fetch related movies from OMDB API
+                        $.ajax({
+                            url: 'https://www.omdbapi.com/?apikey=62f3807a&s=' + data.Title,
+                            type: 'GET',
+                            success: function(data) {
+                                var relatedMovies = data.Search;
+                                var carousel = $('#carousel');
+                                carousel.empty();
+
+                                relatedMovies.forEach(function(movie) {
+                                    var movieImg = $('<img>', {
+                                        src: movie.Poster,
+                                        alt: movie.Title,
+                                        'data-imdb-id': movie.imdbID // Store IMDb ID as data attribute
+                                    });
+
+                                    movieImg.click(function() {
+                                        redirectTo123API($(this).data('imdb-id'));
+                                    });
+
+                                    carousel.append(movieImg);
+                                });
+
+                                // Initialize Owl Carousel
+                                carousel.owlCarousel({
+                                    items: 3,
+                                    loop: true,
+                                    center: true,
+                                    margin: 20,
+                                    autoplay: true, // Autoplay feature
+                                    autoplayTimeout: 3000, // Autoplay interval in milliseconds
+                                    nav: true,
+                                    navText: ['<', '>']
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+        });
+
+        function redirectTo123API(imdbId) {
+            var serverName = "hydrax"; // Choose the "hydrax" server
+            var apiUrl = `https://api.123movie.cc/imdb.php?imdb=${imdbId}&server=${serverName}`;
+            window.open(apiUrl); // Open in a new tab/window
+        }
+    </script>
+</body>
+</html>
