@@ -1,68 +1,247 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html> 
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Netflix Unlocked</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         body {
             background-color: #000;
             color: white;
-            overflow: hidden; /* Prevent scrolling */
-            position: relative; /* Add relative position to the body */
+            overflow-x: hidden;
+            position: relative;
+            font-family: 'Arial', sans-serif;
+        }
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -2;
         }
         .center-content {
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            text-align: center;
-            min-height: 100vh;
+            padding: 20px;
         }
-        .carousel img {
-            max-width: 120px;
+        .search-container {
+            background: rgba(20, 20, 20, 0.9);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 0 25px rgba(255, 0, 0, 0.4);
+            max-width: 500px;
+            width: 100%;
+            position: relative;
+            margin-top: 20px; /* Space below the title */
+            z-index: 10;
+        }
+        .image-container {
+            margin-top: 2rem;
+            width: 100%;
+            max-width: 800px;
+            position: relative;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            z-index: 5;
+        }
+        .image-container img {
+            max-width: 150px;
             height: auto;
             cursor: pointer;
+            transition: transform 0.3s ease;
+            border: 2px solid #ff0000;
+            border-radius: 5px;
+            position: relative;
+            opacity: 0; /* Hide initially, will be shown by ripple effect */
         }
-        #matrix-canvas {
+        .image-container img:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+        }
+        .btn-red {
+            background-color: #ff0000;
+            border: none;
+            padding: 12px 25px;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .btn-red:hover {
+            background-color: #cc0000;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4);
+        }
+        .form-control {
+            background: #222;
+            border: 1px solid #ff0000;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #ff3333;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+        }
+        #back-btn {
+            display: none;
+            margin-top: 25px;
+            z-index: 10;
+            position: relative;
+        }
+        h1 {
+            text-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 10;
+        }
+        .form-check-label {
+            cursor: pointer;
+        }
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            position: relative;
+            z-index: 5;
+        }
+        /* Movie title display on hover */
+        .movie-wrapper {
+            position: relative;
+            margin: 10px;
+        }
+        .movie-title {
             position: absolute;
-            top: 0;
+            bottom: 0;
             left: 0;
-            z-index: -1;
+            right: 0;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            text-align: center;
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            z-index: 6;
         }
-        #movie-title, .btn-teal {
+        .movie-wrapper:hover .movie-title {
+            opacity: 1;
+        }
+        /* Styles for embedded player */
+        #player-container {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+            margin-top: 20px;
+            position: relative;
+            z-index: 10;
+        }
+        #player-iframe {
+            width: 100%;
+            height: 450px;
+            border: 2px solid #ff0000;
+            border-radius: 10px;
+            background-color: #000;
+        }
+        /* Episode display styles */
+        #episode-container {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+            margin-top: 20px;
+            background: rgba(40, 0, 0, 0.9);
+            border-radius: 10px;
+            border: 1px solid #ff0000;
+            padding: 15px;
+            z-index: 10;
+            position: relative;
+        }
+        .season-tab {
+            display: inline-block;
+            padding: 8px 15px;
+            margin: 5px;
+            background: rgba(60, 0, 0, 0.7);
+            border: 1px solid #ff0000;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .season-tab:hover, .season-tab.active {
+            background: rgba(255, 0, 0, 0.4);
+        }
+        .season-content {
+            display: none;
+            margin-top: 15px;
+        }
+        .season-content.active {
             display: block;
         }
-        .owl-nav {
-            margin-top: 20px;
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
+        .episode-item {
+            display: flex;
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 0, 0, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .episode-item:hover {
+            background: rgba(255, 0, 0, 0.2);
+        }
+        .episode-number {
+            min-width: 50px;
+            font-weight: bold;
+        }
+        .episode-title {
+            flex: 1;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,0,0,.3);
+            border-radius: 50%;
+            border-top-color: #ff0000;
+            animation: spin 1s ease-in-out infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        #seasons-tabs {
+            white-space: nowrap;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        
+        /* New styles for displaying episodes below player */
+        .player-and-episodes {
+            display: flex;
+            flex-direction: column;
             width: 100%;
-            display: none; /* Hide arrows initially */
+            max-width: 800px;
         }
-        .owl-prev, .owl-next {
-            color: black; /* Set arrow color to black */
-            font-size: 32px; /* Increase arrow size */
-            position: absolute;
-            top: 0;
+        
+        .episode-playing {
+            background-color: rgba(255, 0, 0, 0.3);
+            font-weight: bold;
         }
-        .owl-prev {
-            left: 20px; /* Adjust left arrow position */
-        }
-        .owl-next {
-            right: 20px; /* Adjust right arrow position */
-        }
-        .owl-carousel:hover .owl-nav {
-            display: block; /* Show arrows on carousel hover */
-        }
-        #movie-title {
-            width: 300px; /* Make the text box wider */
-        }
-        .btn-teal {
-            background-color: teal;
-            color: white;
+        
+        .selected-title {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #ff0000;
+            font-size: 1.2rem;
         }
     </style>
 </head>
@@ -70,118 +249,450 @@
     <canvas id="matrix-canvas"></canvas>
     <div class="container">
         <div class="center-content">
-            <h1>Netflix Unlocked</h1>
-            <form id="search-form">
-                <div class="form-group">
-                    <input type="text" class="form-control" id="movie-title" placeholder="Enter movie title">
+            <div class="content-wrapper">
+                <h1>Netflix Unlocked</h1>
+                <div class="search-container">
+                    <form id="search-form">
+                        <div class="form-group mb-3">
+                            <input type="text" class="form-control" id="movie-title" placeholder="Enter movie/series title">
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="is-series">
+                            <label class="form-check-label" for="is-series">Search for Series</label>
+                        </div>
+                        <button type="submit" class="btn btn-red btn-block">Search</button>
+                    </form>
                 </div>
-               <center><button type="submit" class="btn btn-teal">Search</button></center> 
-            </form>
-            <div class="owl-carousel" id="carousel">
-                <!-- Related movies will be displayed here as carousel items -->
-            </div>
-            <div class="owl-nav">
-                <button class="owl-prev"><</button>
-                <button class="owl-next">></button>
+                
+                <div class="player-and-episodes">
+                    <!-- Player container -->
+                    <div id="player-container">
+                        <div class="selected-title" id="now-playing"></div>
+                        <iframe id="player-iframe" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                    
+                    <!-- Episode display container -->
+                    <div id="episode-container">
+                        <h4 id="series-title" class="mb-3">Series Title</h4>
+                        <div id="seasons-tabs"></div>
+                        <div id="episodes-content"></div>
+                    </div>
+                </div>
+                
+                <div class="image-container" id="image-container">
+                    <!-- Images will be dynamically added here -->
+                </div>
+                <button id="back-btn" class="btn btn-red">Back to Home</button>
             </div>
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // Matrix Rainfall Animation
-        var matrixCanvas = document.getElementById('matrix-canvas');
-        var matrixCtx = matrixCanvas.getContext('2d');
-        var matrixFont = '20px monospace';
-        matrixCanvas.width = window.innerWidth;
-        matrixCanvas.height = window.innerHeight;
+        // Matrix Rain Animation
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-        var matrixLetters = 'abcdefghijklmnopqrstuvwxyz0123456789';
-        matrixLetters = matrixLetters.split('');
+        const japaneseChars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン' +
+                      '0123456789' +
+                      'ABCDEFGHIJKLMNOPQRSTUVWXYZ' +
+                      'abcdefghijklmnopqrstuvwxyz';
+        const chars = japaneseChars.split('');
+        const fontSize = 20;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(0);
 
-        var matrixColumns = matrixCanvas.width / 20;
-        var matrixDrops = [];
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ff0000';
+            ctx.font = `${fontSize}px monospace`;
 
-        for (var i = 0; i < matrixColumns; i++) {
-            matrixDrops[i] = Math.floor(Math.random() * matrixCanvas.height);
-        }
-
-        function matrixDraw() {
-            matrixCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-            matrixCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
-            matrixCtx.fillStyle = '#0f0';
-            matrixCtx.font = matrixFont;
-
-            for (var i = 0; i < matrixColumns; i++) {
-                var text = matrixLetters[Math.floor(Math.random() * matrixLetters.length)];
-                matrixCtx.fillText(text, i * 20, matrixDrops[i] * 20);
-                if (matrixDrops[i] * 20 > matrixCanvas.height && Math.random() > 0.975) {
-                    matrixDrops[i] = 0;
+            drops.forEach((y, i) => {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, y * fontSize);
+                if (y * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                } else {
+                    drops[i] = y + 1;
                 }
-                matrixDrops[i]++;
-            }
-        }
-
-        setInterval(matrixDraw, 100);
-
-        $(document).ready(function() {
-            $('#search-form').on('submit', function(e) {
-                e.preventDefault();
-                var movieTitle = $('#movie-title').val();
-                $.ajax({
-                    url: 'https://www.omdbapi.com/?apikey=62f3807a&t=' + movieTitle,
-                    type: 'GET',
-                    success: function(data) {
-                        $('#movie-title, .btn-teal').hide();
-                        $('#results').html(''); // Clear previous results
-
-                        // Fetch related movies from OMDB API
-                        $.ajax({
-                            url: 'https://www.omdbapi.com/?apikey=62f3807a&s=' + data.Title,
-                            type: 'GET',
-                            success: function(data) {
-                                var relatedMovies = data.Search;
-                                var carousel = $('#carousel');
-                                carousel.empty();
-
-                                relatedMovies.forEach(function(movie) {
-                                    var movieImg = $('<img>', {
-                                        src: movie.Poster,
-                                        alt: movie.Title,
-                                        'data-imdb-id': movie.imdbID // Store IMDb ID as data attribute
-                                    });
-
-                                    movieImg.click(function() {
-                                        redirectTo123API($(this).data('imdb-id'));
-                                    });
-
-                                    carousel.append(movieImg);
-                                });
-
-                                // Initialize Owl Carousel
-                                carousel.owlCarousel({
-                                    items: 3,
-                                    loop: true,
-                                    center: true,
-                                    margin: 20,
-                                    autoplay: true, // Autoplay feature
-                                    autoplayTimeout: 3000, // Autoplay interval in milliseconds
-                                    nav: true,
-                                    navText: ['<', '>']
-                                });
-                            }
-                        });
-                    }
-                });
             });
+        }
+        setInterval(drawMatrix, 50);
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         });
 
-        function redirectTo123API(imdbId) {
-            var serverName = "hydrax"; // Choose the "hydrax" server
-            var apiUrl = `https://api.123movie.cc/imdb.php?imdb=${imdbId}&server=${serverName}`;
-            window.open(apiUrl); // Open in a new tab/window
-        }
+        $(document).ready(function() {
+            const $imageContainer = $('#image-container');
+            const $playerContainer = $('#player-container');
+            const $episodeContainer = $('#episode-container');
+            const $playerIframe = $('#player-iframe');
+            const $seriesTitle = $('#series-title');
+            const $seasonsTabs = $('#seasons-tabs');
+            const $episodesContent = $('#episodes-content');
+            const $nowPlaying = $('#now-playing');
+            
+            // Cache for series episode data
+            const seriesCache = {};
+            
+            // Track currently playing episode/movie
+            let currentPlayingData = {
+                imdbId: null,
+                season: null,
+                episode: null,
+                title: null,
+                type: null
+            };
+            
+            // Initially hide the empty containers
+            $imageContainer.hide();
+            $playerContainer.hide();
+            $episodeContainer.hide();
+
+            $('#search-form').on('submit', function(e) {
+                e.preventDefault();
+                const title = $('#movie-title').val();
+                if (!title) {
+                    alert('Please enter a movie or series title');
+                    return;
+                }
+                
+                const isSeries = $('#is-series').is(':checked');
+                
+                $('.search-container').hide();
+                $('#back-btn').show();
+
+                // Always search for content first instead of direct redirection
+                searchContent(title, isSeries);
+            });
+
+            function searchContent(title, filterToSeries = false) {
+                $.ajax({
+                    url: `https://www.omdbapi.com/?apikey=62f3807a&s=${encodeURIComponent(title)}`,
+                    type: 'GET',
+                    success: function(data) {
+                        if (data.Response === "True" && data.Search && data.Search.length > 0) {
+                            // Filter series if requested
+                            let results = data.Search;
+                            if (filterToSeries) {
+                                results = results.filter(item => item.Type === "series");
+                                if (results.length === 0) {
+                                    alert('No series found with that title.');
+                                    resetView();
+                                    return;
+                                }
+                            }
+                            
+                            // Clear the image container
+                            $imageContainer.empty();
+                            
+                            // Add loading class
+                            $imageContainer.addClass('loading');
+                            
+                            // Add new items to image container
+                            results.forEach(item => {
+                                const posterUrl = item.Poster !== "N/A" ? item.Poster : 'https://via.placeholder.com/150x225?text=No+Poster';
+                                
+                                const $wrapper = $('<div>', { class: 'movie-wrapper' });
+                                
+                                const $img = $('<img>', {
+                                    src: posterUrl,
+                                    alt: item.Title,
+                                    'data-imdb-id': item.imdbID,
+                                    'data-type': item.Type,
+                                    'data-title': item.Title,
+                                    'data-year': item.Year,
+                                    style: 'opacity: 1;' // Make images visible immediately
+                                });
+                                
+                                const $title = $('<div>', {
+                                    class: 'movie-title',
+                                    text: `${item.Title} (${item.Year}) - ${item.Type.charAt(0).toUpperCase() + item.Type.slice(1)}`
+                                });
+                                
+                                $img.on('click', function() {
+                                    const imdbId = $(this).data('imdb-id');
+                                    const type = $(this).data('type');
+                                    const title = $(this).data('title');
+                                    
+                                    if (type === 'series') {
+                                        handleSeriesClick(imdbId, title);
+                                    } else {
+                                        playMovie(imdbId, title);
+                                    }
+                                });
+                                
+                                $wrapper.append($img);
+                                $wrapper.append($title);
+                                $imageContainer.append($wrapper);
+                            });
+                            
+                            $imageContainer.show();
+                            $imageContainer.removeClass('loading');
+                        } else {
+                            alert('No content found matching your search!');
+                            resetView();
+                        }
+                    },
+                    error: function() {
+                        alert('Error searching for content!');
+                        resetView();
+                    }
+                });
+            }
+
+            function handleSeriesClick(imdbId, title) {
+                // Hide the image container
+                $imageContainer.hide();
+                
+                // Set the series title
+                $seriesTitle.text(title);
+                
+                // Store current series info
+                currentPlayingData.imdbId = imdbId;
+                currentPlayingData.title = title;
+                currentPlayingData.type = 'series';
+                
+                // Show the episode container with loading state
+                $episodesContent.html('<div class="text-center"><div class="loading-spinner"></div><p>Loading episodes...</p></div>');
+                $episodeContainer.show();
+                
+                // Check if we already have the series data cached
+                if (seriesCache[imdbId]) {
+                    displaySeriesEpisodes(seriesCache[imdbId]);
+                    return;
+                }
+                
+                // Fetch detailed series info
+                $.ajax({
+                    url: `https://www.omdbapi.com/?apikey=62f3807a&i=${imdbId}&plot=full`,
+                    type: 'GET',
+                    success: function(seriesData) {
+                        if (seriesData.Response === "True") {
+                            // Get total seasons
+                            const totalSeasons = parseInt(seriesData.totalSeasons) || 1;
+                            
+                            // Create an object to store all episodes
+                            const seriesInfo = {
+                                imdbId: imdbId,
+                                title: seriesData.Title,
+                                totalSeasons: totalSeasons,
+                                seasons: {}
+                            };
+                            
+                            // Fetch episodes for each season
+                            let seasonsFetched = 0;
+                            
+                            function fetchSeason(seasonNum) {
+                                $.ajax({
+                                    url: `https://www.omdbapi.com/?apikey=62f3807a&i=${imdbId}&Season=${seasonNum}`,
+                                    type: 'GET',
+                                    success: function(seasonData) {
+                                        if (seasonData.Response === "True" && seasonData.Episodes) {
+                                            seriesInfo.seasons[seasonNum] = seasonData.Episodes
+                                        }
+                                        
+                                        seasonsFetched++;
+                                        if (seasonsFetched >= totalSeasons) {
+                                            // Cache the data
+                                            seriesCache[imdbId] = seriesInfo;
+                                            // Display the episodes
+                                            displaySeriesEpisodes(seriesInfo);
+                                        }
+                                    },
+                                    error: function() {
+                                        seasonsFetched++;
+                                        if (seasonsFetched >= totalSeasons) {
+                                            // Cache the data even with errors
+                                            seriesCache[imdbId] = seriesInfo;
+                                            displaySeriesEpisodes(seriesInfo);
+                                        }
+                                    }
+                                });
+                            }
+                            
+                            // Start fetching all seasons
+                            for (let i = 1; i <= totalSeasons; i++) {
+                                fetchSeason(i);
+                            }
+                        } else {
+                            alert('Error fetching series information!');
+                            $episodeContainer.hide();
+                            resetView();
+                        }
+                    },
+                    error: function() {
+                        alert('Error fetching series information!');
+                        $episodeContainer.hide();
+                        resetView();
+                    }
+                });
+            }
+            
+            function displaySeriesEpisodes(seriesInfo) {
+                // Clear previous tabs and content
+                $seasonsTabs.empty();
+                $episodesContent.empty();
+                
+                // Create season tabs
+                const seasons = Object.keys(seriesInfo.seasons).sort((a, b) => parseInt(a) - parseInt(b));
+                
+                if (seasons.length === 0) {
+                    $episodesContent.html('<div class="text-center">No episodes found for this series.</div>');
+                    return;
+                }
+                
+                // Add tabs for each season
+                seasons.forEach((season, index) => {
+                    const $tab = $('<div>', {
+                        class: 'season-tab' + (index === 0 ? ' active' : ''),
+                        'data-season': season,
+                        text: 'Season ' + season
+                    });
+                    
+                    $tab.on('click', function() {
+                        // Switch active tab
+                        $('.season-tab').removeClass('active');
+                        $(this).addClass('active');
+                        
+                        // Show corresponding season content
+                        $('.season-content').removeClass('active');
+                        $('#season-' + $(this).data('season')).addClass('active');
+                    });
+                    
+                    $seasonsTabs.append($tab);
+                });
+                
+                // Create content for each season
+                seasons.forEach((season, index) => {
+                    const episodes = seriesInfo.seasons[season];
+                    
+                    const $seasonContent = $('<div>', {
+                        id: 'season-' + season,
+                        class: 'season-content' + (index === 0 ? ' active' : '')
+                    });
+                    
+                    // Add episodes list
+                    episodes.forEach(episode => {
+                        const $episodeItem = $('<div>', {
+                            class: 'episode-item',
+                            'data-season': season,
+                            'data-episode': episode.Episode,
+                            'data-imdb-id': seriesInfo.imdbId,
+                            'data-title': episode.Title
+                        });
+                        
+                        const $episodeNumber = $('<div>', {
+                            class: 'episode-number',
+                            text: episode.Episode
+                        });
+                        
+                        const $episodeTitle = $('<div>', {
+                            class: 'episode-title',
+                            text: episode.Title
+                        });
+                        
+                        $episodeItem.append($episodeNumber, $episodeTitle);
+                        
+                        $episodeItem.on('click', function() {
+                            const imdbId = $(this).data('imdb-id');
+                            const season = $(this).data('season');
+                            const episode = $(this).data('episode');
+                            const episodeTitle = $(this).data('title');
+                            
+                            // Update all episodes to remove playing state
+                            $('.episode-item').removeClass('episode-playing');
+                            // Add playing state to this episode
+                            $(this).addClass('episode-playing');
+                            
+                            playEpisode(imdbId, season, episode, episodeTitle);
+                        });
+                        
+                        $seasonContent.append($episodeItem);
+                    });
+                    
+                    $episodesContent.append($seasonContent);
+                });
+                
+                // Check if an episode is already playing
+                if (currentPlayingData.season && currentPlayingData.episode) {
+                    $(`.episode-item[data-season="${currentPlayingData.season}"][data-episode="${currentPlayingData.episode}"]`).addClass('episode-playing');
+                }
+            }
+            
+            function playMovie(imdbId, title) {
+                // Update current playing data
+                currentPlayingData = {
+                    imdbId: imdbId,
+                    season: null,
+                    episode: null,
+                    title: title,
+                    type: 'movie'
+                };
+                
+                // Hide image container
+                $imageContainer.hide();
+                
+                // Update the now playing title
+                $nowPlaying.text(`Now Playing: ${title}`);
+                
+                // Set the iframe source
+                $playerIframe.attr('src', `https://vidsrc.xyz/embed/movie?imdb=${imdbId}`);
+                
+                // Show the player
+                $playerContainer.show();
+            }
+            
+            function playEpisode(imdbId, season, episode, episodeTitle) {
+                // Update current playing data
+                currentPlayingData = {
+                    imdbId: imdbId,
+                    season: season,
+                    episode: episode,
+                    title: episodeTitle,
+                    type: 'series'
+                };
+                
+                // Update the now playing title
+                $nowPlaying.text(`Now Playing: Season ${season}, Episode ${episode} - ${episodeTitle}`);
+                
+                // Set the iframe source
+                $playerIframe.attr('src', `https://vidsrc.xyz/embed/tv?imdb=${imdbId}&season=${season}&episode=${episode}`);
+                
+                // Show the player if not already visible
+                $playerContainer.show();
+            }
+
+            $('#back-btn').on('click', function() {
+                resetView();
+            });
+
+            function resetView() {
+                $imageContainer.hide();
+                $playerContainer.hide();
+                $episodeContainer.hide();
+                $playerIframe.attr('src', ''); // Clear iframe
+                $nowPlaying.text(''); // Clear now playing
+                $('.search-container').show();
+                $('#back-btn').hide();
+                $('#movie-title').val('');
+                $('#is-series').prop('checked', false);
+                
+                // Reset current playing data
+                currentPlayingData = {
+                    imdbId: null,
+                    season: null,
+                    episode: null,
+                    title: null,
+                    type: null
+                };
+            }
+        });
     </script>
 </body>
 </html>
